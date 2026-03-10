@@ -1,6 +1,5 @@
-package com.mycontactsapp.user.builder;
+package com.mycontactsapp.user;
 
-import com.mycontactsapp.user.factory.UserFactory;
 import com.mycontactsapp.user.model.User;
 
 public class UserBuilder {

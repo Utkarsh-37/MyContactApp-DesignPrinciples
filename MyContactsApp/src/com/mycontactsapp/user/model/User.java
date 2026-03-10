@@ -1,6 +1,6 @@
 package com.mycontactsapp.user.model;
 
-import com.mycontactsapp.security.PasswordHasher;
+import com.mycontactsapp.validation.PasswordHasher;
 
 public class User {
 

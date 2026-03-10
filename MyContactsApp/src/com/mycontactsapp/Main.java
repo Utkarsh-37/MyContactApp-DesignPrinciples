@@ -1,23 +1,24 @@
 /*
-// - Use Case-3: User Profile Management
-// - User updates profile information,changes password,or manages preferences
-// - User can update name, password
+// - Use Case-4: Create Contact
+// - User adds a new contact with name, phone numbers, email addresses
+// - It uses list,LocalDateTime for timestamps, UUID for unique IDs
 // - @author Developer
-// - @version 3.0
+// - @version 4.0
 */
 package com.mycontactsapp;
 
-import com.mycontactsapp.user.builder.UserBuilder;
+import com.mycontactsapp.user.UserBuilder;
+import com.mycontactsapp.user.UserRepository;
 import com.mycontactsapp.user.model.User;
-import com.mycontactsapp.user.repository.UserRepository;
 import com.mycontactsapp.user.service.RegistrationService;
 
 import com.mycontactsapp.auth.strategy.*;
-import com.mycontactsapp.auth.service.AuthenticationService;
 import com.mycontactsapp.auth.session.SessionManager;
 
 import com.mycontactsapp.profile.command.*;
 import com.mycontactsapp.profile.service.*;
+
+import com.mycontactsapp.contacts.*;
 
 import com.mycontactsapp.validation.EmailValidator;
 
@@ -40,8 +41,9 @@ public class Main {
             System.out.println("1. Register");
             System.out.println("2. Login");
             System.out.println("3. Manage Profile");
-            System.out.println("4. Logout");
-            System.out.println("5. Exit");
+            System.out.println("4. Create Contact");
+            System.out.println("5. Logout");
+            System.out.println("6. Exit");
             System.out.print("Choose option: ");
 
             int choice = Integer.parseInt(sc.nextLine());
@@ -61,13 +63,17 @@ public class Main {
                 	break;
                     
                 case 4:
+                	createContact(sc);
+                	break;                	
+                    
+                case 5:
                 	session.logout();
                     System.out.println("Logged out successfully.");
                     break;
                     
-                case 5:
+                case 6:
                 	System.out.println("Exiting application...");
-                    return;
+                    return;                	
                 	
                 default:
                     System.out.println("Invalid option.");
@@ -206,5 +212,37 @@ public class Main {
             default:
                 System.out.println("Invalid option.");
         }
+    }
+    
+    private static void createContact(Scanner sc){
+
+        System.out.println("\nContact Type (person/organization):");
+        String type = sc.nextLine();
+
+        System.out.println("Name:");
+        String name = sc.nextLine();
+
+        String orgName = null;
+
+        if(type.equalsIgnoreCase("organization")){
+            System.out.println("Organization Name:");
+            orgName = sc.nextLine();
+        }
+
+        ContactBuilder builder = new ContactBuilder()
+                .setType(type)
+                .setName(name)
+                .setOrganizationName(orgName);
+
+        System.out.println("Enter phone:");
+        builder.addPhone(sc.nextLine());
+
+        System.out.println("Enter email:");
+        builder.addEmail(sc.nextLine());
+
+        Contact contact = builder.build();
+
+        System.out.println("\nContact Created:");
+        contact.display();
     }
 }

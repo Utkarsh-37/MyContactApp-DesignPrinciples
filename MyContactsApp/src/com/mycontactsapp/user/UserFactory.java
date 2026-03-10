@@ -1,7 +1,7 @@
-package com.mycontactsapp.user.factory;
+package com.mycontactsapp.user;
 
 import com.mycontactsapp.user.model.*;
-import com.mycontactsapp.security.PasswordHasher;
+import com.mycontactsapp.validation.PasswordHasher;
 
 public class UserFactory {
 

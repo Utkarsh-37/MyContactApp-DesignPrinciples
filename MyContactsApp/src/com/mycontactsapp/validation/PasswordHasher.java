@@ -1,4 +1,4 @@
-package com.mycontactsapp.security;
+package com.mycontactsapp.validation;
 
 import java.security.MessageDigest;
 

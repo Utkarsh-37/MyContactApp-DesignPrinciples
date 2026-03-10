@@ -1,8 +1,7 @@
-package com.mycontactsapp.auth.service;
+package com.mycontactsapp.auth.strategy;
 
-import com.mycontactsapp.auth.strategy.AuthenticationStrategy;
+import com.mycontactsapp.user.UserRepository;
 import com.mycontactsapp.user.model.User;
-import com.mycontactsapp.user.repository.UserRepository;
 
 import java.util.Optional;
 

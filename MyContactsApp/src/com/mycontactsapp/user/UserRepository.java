@@ -1,4 +1,4 @@
-package com.mycontactsapp.user.repository;
+package com.mycontactsapp.user;
 
 import com.mycontactsapp.user.model.User;
 

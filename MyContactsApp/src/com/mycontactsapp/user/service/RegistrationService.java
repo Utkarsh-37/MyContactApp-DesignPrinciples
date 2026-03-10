@@ -1,7 +1,7 @@
 package com.mycontactsapp.user.service;
 
+import com.mycontactsapp.user.UserRepository;
 import com.mycontactsapp.user.model.User;
-import com.mycontactsapp.user.repository.UserRepository;
 import com.mycontactsapp.validation.EmailValidator;
 import com.mycontactsapp.exception.UserAlreadyExistsException;
 
