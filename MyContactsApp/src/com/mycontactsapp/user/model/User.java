@@ -14,6 +14,7 @@ public class User {
         this.name = name;
     }
 
+    // JavaBeans getters
     public String getEmail() {
         return email;
     }
@@ -22,7 +23,24 @@ public class User {
         return name;
     }
 
-    public boolean checkPassword(String password) {
+    // Setter with validation
+    public void setName(String name) {
+
+        if(name == null || name.isBlank())
+            throw new IllegalArgumentException("Name cannot be empty");
+
+        this.name = name;
+    }
+
+    public void changePassword(String newPassword){
+
+        if(newPassword.length() < 4)
+            throw new IllegalArgumentException("Password too short");
+
+        this.passwordHash = PasswordHasher.hash(newPassword);
+    }
+
+    public boolean checkPassword(String password){
         return PasswordHasher.hash(password).equals(passwordHash);
     }
 

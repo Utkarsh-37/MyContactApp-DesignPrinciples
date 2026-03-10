@@ -1,10 +1,9 @@
 /*
-// - Use Case-2: User Authentication
-// - User logs in with credentials to access their contact list
-// - Password is hashed using MessageDigest (SHA-256)
-// - User can select to login using BasicAuth or OAuth
+// - Use Case-3: User Profile Management
+// - User updates profile information,changes password,or manages preferences
+// - User can update name, password
 // - @author Developer
-// - @version 2.0
+// - @version 3.0
 */
 package com.mycontactsapp;
 
@@ -16,6 +15,9 @@ import com.mycontactsapp.user.service.RegistrationService;
 import com.mycontactsapp.auth.strategy.*;
 import com.mycontactsapp.auth.service.AuthenticationService;
 import com.mycontactsapp.auth.session.SessionManager;
+
+import com.mycontactsapp.profile.command.*;
+import com.mycontactsapp.profile.service.*;
 
 import com.mycontactsapp.validation.EmailValidator;
 
@@ -37,8 +39,9 @@ public class Main {
             System.out.println("\n===== MyContacts App =====");
             System.out.println("1. Register");
             System.out.println("2. Login");
-            System.out.println("3. Logout");
-            System.out.println("4. Exit");
+            System.out.println("3. Manage Profile");
+            System.out.println("4. Logout");
+            System.out.println("5. Exit");
             System.out.print("Choose option: ");
 
             int choice = Integer.parseInt(sc.nextLine());
@@ -54,14 +57,18 @@ public class Main {
                     break;
 
                 case 3:
-                    session.logout();
+                	manageProfile(sc, session);
+                	break;
+                    
+                case 4:
+                	session.logout();
                     System.out.println("Logged out successfully.");
                     break;
-
-                case 4:
-                    System.out.println("Exiting application...");
+                    
+                case 5:
+                	System.out.println("Exiting application...");
                     return;
-
+                	
                 default:
                     System.out.println("Invalid option.");
             }
@@ -146,6 +153,58 @@ public class Main {
 
         } else {
             System.out.println("Authentication failed.");
+        }
+    }
+    private static void manageProfile(Scanner sc, SessionManager session){
+
+        if(!session.isLoggedIn()){
+            System.out.println("Please login first.");
+            return;
+        }
+
+        User user = session.getCurrentUser();
+
+        ProfileService service = new ProfileService();
+
+        System.out.println("\nProfile Menu");
+        System.out.println("1. Change Name");
+        System.out.println("2. Change Password");
+        System.out.println("3. View Profile");
+
+        int choice = Integer.parseInt(sc.nextLine());
+
+        switch(choice){
+
+            case 1:
+
+                System.out.println("Enter new name:");
+                String newName = sc.nextLine();
+
+                service.executeCommand(
+                        new UpdateNameCommand(user,newName)
+                );
+
+                System.out.println("Name updated successfully.");
+                break;
+
+            case 2:
+
+                System.out.println("Enter new password:");
+                String newPassword = sc.nextLine();
+
+                service.executeCommand(
+                        new ChangePasswordCommand(user,newPassword)
+                );
+
+                System.out.println("Password changed successfully.");
+                break;
+
+            case 3:
+                System.out.println(user);
+                break;
+
+            default:
+                System.out.println("Invalid option.");
         }
     }
 }
