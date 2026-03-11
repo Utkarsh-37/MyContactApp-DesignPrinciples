@@ -1,9 +1,12 @@
 /*
-// - Use Case-4: Create Contact
-// - User adds a new contact with name, phone numbers, email addresses
-// - It uses list,LocalDateTime for timestamps, UUID for unique IDs
+// - Use Case-5: View Contact Details
+// - User views complete information of a specific contact.
+// 
+// - Use specific user's UUID or #(the serial number/ index) to access the specific details
+/// 
 // - @author Developer
-// - @version 4.0
+// - @version 5.0
+//
 */
 package com.mycontactsapp;
 
@@ -19,6 +22,7 @@ import com.mycontactsapp.profile.command.*;
 import com.mycontactsapp.profile.service.*;
 
 import com.mycontactsapp.contacts.*;
+import com.mycontactsapp.contacts.decorator.*;
 
 import com.mycontactsapp.validation.EmailValidator;
 
@@ -26,223 +30,258 @@ import java.util.*;
 
 public class Main {
 
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
-        Scanner sc = new Scanner(System.in);
+		Scanner sc = new Scanner(System.in);
 
-        UserRepository repository = new UserRepository();
-        RegistrationService regService = new RegistrationService(repository);
+		UserRepository repository = new UserRepository();
+		RegistrationService regService = new RegistrationService(repository);
 
-        SessionManager session = SessionManager.getInstance();
+		SessionManager session = SessionManager.getInstance();
 
-        while(true){
+		List<Contact> contacts = new ArrayList<>();
 
-            System.out.println("\n===== MyContacts App =====");
-            System.out.println("1. Register");
-            System.out.println("2. Login");
-            System.out.println("3. Manage Profile");
-            System.out.println("4. Create Contact");
-            System.out.println("5. Logout");
-            System.out.println("6. Exit");
-            System.out.print("Choose option: ");
+		while (true) {
 
-            int choice = Integer.parseInt(sc.nextLine());
+			System.out.println("\n===== MyContacts App =====");
+			System.out.println("1. Register");
+			System.out.println("2. Login");
+			System.out.println("3. Manage Profile");
+			System.out.println("4. Create Contact");
+			System.out.println("5. View Contact");
+			System.out.println("6. Logout");
+			System.out.println("7. Exit");
+			System.out.print("Choose option: ");
 
-            switch(choice){
+			int choice = Integer.parseInt(sc.nextLine());
 
-                case 1:
-                    register(sc, regService);
-                    break;
+			switch (choice) {
 
-                case 2:
-                    login(sc, repository, session);
-                    break;
+			case 1 -> register(sc, regService);
 
-                case 3:
-                	manageProfile(sc, session);
-                	break;
-                    
-                case 4:
-                	createContact(sc);
-                	break;                	
-                    
-                case 5:
-                	session.logout();
-                    System.out.println("Logged out successfully.");
-                    break;
-                    
-                case 6:
-                	System.out.println("Exiting application...");
-                    return;                	
-                	
-                default:
-                    System.out.println("Invalid option.");
-            }
-        }
-    }
+			case 2 -> login(sc, repository, session);
 
-    private static void register(Scanner sc, RegistrationService regService){
+			case 3 -> manageProfile(sc, session);
 
-        try {
+			case 4 -> contacts.add(createContact(sc));
 
-            System.out.println("\nEnter Name:");
-            String name = sc.nextLine();
+			case 5 -> viewContacts(contacts, sc);
 
-            System.out.println("Enter Email:");
-            String email = sc.nextLine();
+			case 6 -> {
+				session.logout();
+				System.out.println("Logged out successfully.");
+			}
 
-            if(!EmailValidator.isValid(email)){
-                System.out.println("Invalid email format.");
-                return;
-            }
+			case 7 -> {
+				System.out.println("Exiting application...");
+				return;
+			}
 
-            System.out.println("Enter Password:");
-            String password = sc.nextLine();
+			default -> System.out.println("Invalid option.");
+			}
+		}
+	}
+	private static void register(Scanner sc, RegistrationService regService){
 
-            System.out.println("User Type (free/premium):");
-            String type = sc.nextLine();
+		try {
 
-            User user = new UserBuilder()
-                    .setName(name)
-                    .setEmail(email)
-                    .setPassword(password)
-                    .setType(type)
-                    .build();
+			System.out.println("\nEnter Name:");
+			String name = sc.nextLine();
 
-            regService.register(user);
+			System.out.println("Enter Email:");
+			String email = sc.nextLine();
 
-            System.out.println("\nUser Registered Successfully!");
-            System.out.println(user);
+			if(!EmailValidator.isValid(email)){
+				System.out.println("Invalid email format.");
+				return;
+			}
 
-        } catch(Exception e){
-            System.out.println(e.getMessage());
-        }
-    }
+			System.out.println("Enter Password:");
+			String password = sc.nextLine();
+
+			System.out.println("User Type (free/premium):");
+			String type = sc.nextLine();
+
+			User user = new UserBuilder()
+					.setName(name)
+					.setEmail(email)
+					.setPassword(password)
+					.setType(type)
+					.build();
+
+			regService.register(user);
+
+			System.out.println("\nUser Registered Successfully!");
+			System.out.println(user);
+
+		} catch(Exception e){
+			System.out.println(e.getMessage());
+		}
+	}
 
 
-    private static void login(Scanner sc, UserRepository repository, SessionManager session){
+	private static void login(Scanner sc, UserRepository repository, SessionManager session){
 
-        System.out.println("\nChoose Authentication Method");
-        System.out.println("1. Basic Authentication");
-        System.out.println("2. OAuth Login");
+		System.out.println("\nChoose Authentication Method");
+		System.out.println("1. Basic Authentication");
+		System.out.println("2. OAuth Login");
 
-        int method = Integer.parseInt(sc.nextLine());
+		int method = Integer.parseInt(sc.nextLine());
 
-        AuthenticationStrategy strategy;
+		AuthenticationStrategy strategy;
 
-        if(method == 2)
-            strategy = new OAuthStrategy();
-        else
-            strategy = new BasicAuthStrategy();
+		if(method == 2)
+			strategy = new OAuthStrategy();
+		else
+			strategy = new BasicAuthStrategy();
 
-        AuthenticationService authService =
-                new AuthenticationService(strategy, repository);
+		AuthenticationService authService =
+				new AuthenticationService(strategy, repository);
 
-        System.out.println("Enter Email:");
-        String email = sc.nextLine();
+		System.out.println("Enter Email:");
+		String email = sc.nextLine();
 
-        String password = "";
+		String password = "";
 
-        if(method == 1){
-            System.out.println("Enter Password:");
-            password = sc.nextLine();
-        }
+		if(method == 1){
+			System.out.println("Enter Password:");
+			password = sc.nextLine();
+		}
 
-        Optional<User> user = authService.login(email, password);
+		Optional<User> user = authService.login(email, password);
 
-        if(user.isPresent()){
+		if(user.isPresent()){
 
-            session.login(user.get());
+			session.login(user.get());
 
-            System.out.println("\nLogin Successful!");
-            System.out.println("Welcome " + session.getCurrentUser().getName());
+			System.out.println("\nLogin Successful!");
+			System.out.println("Welcome " + session.getCurrentUser().getName());
 
-        } else {
-            System.out.println("Authentication failed.");
-        }
-    }
-    private static void manageProfile(Scanner sc, SessionManager session){
+		} else {
+			System.out.println("Authentication failed.");
+		}
+	}
+	private static void manageProfile(Scanner sc, SessionManager session){
 
-        if(!session.isLoggedIn()){
-            System.out.println("Please login first.");
-            return;
-        }
+		if(!session.isLoggedIn()){
+			System.out.println("Please login first.");
+			return;
+		}
 
-        User user = session.getCurrentUser();
+		User user = session.getCurrentUser();
 
-        ProfileService service = new ProfileService();
+		ProfileService service = new ProfileService();
 
-        System.out.println("\nProfile Menu");
-        System.out.println("1. Change Name");
-        System.out.println("2. Change Password");
-        System.out.println("3. View Profile");
+		System.out.println("\nProfile Menu");
+		System.out.println("1. Change Name");
+		System.out.println("2. Change Password");
+		System.out.println("3. View Profile");
 
-        int choice = Integer.parseInt(sc.nextLine());
+		int choice = Integer.parseInt(sc.nextLine());
 
-        switch(choice){
+		switch(choice){
 
-            case 1:
+		case 1:
 
-                System.out.println("Enter new name:");
-                String newName = sc.nextLine();
+			System.out.println("Enter new name:");
+			String newName = sc.nextLine();
 
-                service.executeCommand(
-                        new UpdateNameCommand(user,newName)
-                );
+			service.executeCommand(
+					new UpdateNameCommand(user,newName)
+					);
 
-                System.out.println("Name updated successfully.");
-                break;
+			System.out.println("Name updated successfully.");
+			break;
 
-            case 2:
+		case 2:
 
-                System.out.println("Enter new password:");
-                String newPassword = sc.nextLine();
+			System.out.println("Enter new password:");
+			String newPassword = sc.nextLine();
 
-                service.executeCommand(
-                        new ChangePasswordCommand(user,newPassword)
-                );
+			service.executeCommand(
+					new ChangePasswordCommand(user,newPassword)
+					);
 
-                System.out.println("Password changed successfully.");
-                break;
+			System.out.println("Password changed successfully.");
+			break;
 
-            case 3:
-                System.out.println(user);
-                break;
+		case 3:
+			System.out.println(user);
+			break;
 
-            default:
-                System.out.println("Invalid option.");
-        }
-    }
-    
-    private static void createContact(Scanner sc){
+		default:
+			System.out.println("Invalid option.");
+		}
+	}
 
-        System.out.println("\nContact Type (person/organization):");
-        String type = sc.nextLine();
+	private static Contact createContact(Scanner sc){
 
-        System.out.println("Name:");
-        String name = sc.nextLine();
+		System.out.println("\nContact Type (person/organization):");
+		String type = sc.nextLine();
 
-        String orgName = null;
+		System.out.println("Name:");
+		String name = sc.nextLine();
 
-        if(type.equalsIgnoreCase("organization")){
-            System.out.println("Organization Name:");
-            orgName = sc.nextLine();
-        }
+		String orgName = null;
 
-        ContactBuilder builder = new ContactBuilder()
-                .setType(type)
-                .setName(name)
-                .setOrganizationName(orgName);
+		if(type.equalsIgnoreCase("organization")){
+			System.out.println("Organization Name:");
+			orgName = sc.nextLine();
+		}
 
-        System.out.println("Enter phone:");
-        builder.addPhone(sc.nextLine());
+		ContactBuilder builder = new ContactBuilder()
+				.setType(type)
+				.setName(name)
+				.setOrganizationName(orgName);
 
-        System.out.println("Enter email:");
-        builder.addEmail(sc.nextLine());
+		System.out.println("Enter phone:");
+		builder.addPhone(sc.nextLine());
 
-        Contact contact = builder.build();
+		System.out.println("Enter email:");
+		builder.addEmail(sc.nextLine());
 
-        System.out.println("\nContact Created:");
-        contact.display();
-    }
+		Contact contact = builder.build();
+
+		System.out.println("\nContact Created:");
+		contact.display();
+
+		return contact;
+	}
+
+	private static void viewContacts(List<Contact> contacts, Scanner sc){
+
+		if(contacts.isEmpty()){
+			System.out.println("No contacts available.");
+			return;
+		}
+
+		System.out.println("\nYour Contacts:");
+
+		for(int i = 0; i < contacts.size(); i++){
+			System.out.println((i+1) + ". " + contacts.get(i).getName());
+		}
+
+		System.out.println("Select contact number:");
+		int index = Integer.parseInt(sc.nextLine()) - 1;
+
+		if(index < 0 || index >= contacts.size()){
+			System.out.println("Invalid contact.");
+			return;
+		}
+
+		Contact contact = contacts.get(index);
+
+		System.out.println("\nView Format");
+		System.out.println("1. Normal");
+		System.out.println("2. Mask Email");
+
+		int option = Integer.parseInt(sc.nextLine());
+
+		if(option == 2){
+			contact = new MaskEmailDecorator(contact);
+		}
+
+		System.out.println("\nContact Details:\n");
+		System.out.println(contact);
+	}
 }

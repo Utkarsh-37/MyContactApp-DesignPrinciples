@@ -37,4 +37,17 @@ public abstract class Contact {
     }
 
     public abstract void display();
+    
+    @Override
+    public String toString() {
+
+        return String.format(
+                "ID: %s\nName: %s\nPhones: %s\nEmails: %s\nCreated: %s",
+                id,
+                name,
+                phones,
+                emails,
+                createdAt
+        );
+    }
 }
