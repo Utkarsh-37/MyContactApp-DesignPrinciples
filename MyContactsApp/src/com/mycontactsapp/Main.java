@@ -1,11 +1,11 @@
 /*
- // - Use Case-9: Search Contacts
- // - User searches contacts by name, phone, email, or tags.
+ // - Use Case-10: Advanced Filtering
+ // - User applies multiple filters (by tag, date added, frequently contacted).
  //
- // - Implements search based on various parameters such as name, email, birthdate, etc.
+ // - Implements filter based on frequently views by using a counter on the view profile function.
  // 
  // - @author Developer
- // - @version 9.0
+ // - @version 10.0
 */
 package com.mycontactsapp;
 
@@ -23,6 +23,7 @@ import com.mycontactsapp.profile.service.*;
 import com.mycontactsapp.contacts.*;
 import com.mycontactsapp.contacts.command.*;
 import com.mycontactsapp.contacts.decorator.*;
+import com.mycontactsapp.contacts.filter.*;
 import com.mycontactsapp.contacts.observer.*;
 import com.mycontactsapp.contacts.search.*;
 import com.mycontactsapp.validation.EmailValidator;
@@ -60,8 +61,9 @@ public class Main {
 			System.out.println("8. Delete Contact");
 			System.out.println("9. Bulk Operations");
 			System.out.println("10. Search Contacts");
-			System.out.println("11. Logout");
-			System.out.println("12. Exit");
+			System.out.println("11. Advance Filter");
+			System.out.println("12. Logout");
+			System.out.println("13. Exit");
 			System.out.print("Choose option: ");
 
 			int choice = Integer.parseInt(sc.nextLine());
@@ -87,13 +89,15 @@ public class Main {
 			case 9 -> bulkOperations(contacts, sc);
 			
 			case 10 -> searchContacts(contacts, sc);
+			
+			case 11 -> advancedFilter(contacts, sc);
 
-			case 11 -> {
+			case 12 -> {
 				session.logout();
 				System.out.println("Logged out successfully.");
 			}
 
-			case 12 -> {
+			case 13 -> {
 				System.out.println("Exiting application...");
 				return;
 			}
@@ -488,6 +492,29 @@ public class Main {
 
 	    contacts.stream()
 	            .filter(spec::isSatisfied)
+	            .forEach(Contact::display);
+	}
+	
+	private static void advancedFilter(List<Contact> contacts, Scanner sc){
+
+	    if(contacts.isEmpty()){
+	        System.out.println("No contacts available.");
+	        return;
+	    }
+
+	    CompositeFilter filter = new CompositeFilter();
+
+	    System.out.println("Filter by name? (y/n)");
+	    if(sc.nextLine().equalsIgnoreCase("y")){
+	        System.out.println("Enter name keyword:");
+	        filter.addFilter(new NameFilter(sc.nextLine()));
+	    }
+
+	    System.out.println("\nFiltered Results:");
+
+	    contacts.stream()
+	            .filter(filter::apply)
+	            .sorted(Comparator.comparing(Contact::getName))
 	            .forEach(Contact::display);
 	}
 }
