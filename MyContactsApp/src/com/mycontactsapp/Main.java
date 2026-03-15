@@ -1,11 +1,11 @@
 /*
- // - Use Case-8: Bulk Operations
- // - User performs operations on multiple contacts (delete, tag, export).
+ // - Use Case-9: Search Contacts
+ // - User searches contacts by name, phone, email, or tags.
  //
- // - Implements bulk operations; updates the in-memory list immediately.
+ // - Implements search based on various parameters such as name, email, birthdate, etc.
  // 
  // - @author Developer
- // - @version 8.0
+ // - @version 9.0
 */
 package com.mycontactsapp;
 
@@ -21,11 +21,10 @@ import com.mycontactsapp.profile.command.*;
 import com.mycontactsapp.profile.service.*;
 
 import com.mycontactsapp.contacts.*;
-import com.mycontactsapp.contacts.command.CommandManager;
-import com.mycontactsapp.contacts.command.EditContactCommand;
+import com.mycontactsapp.contacts.command.*;
 import com.mycontactsapp.contacts.decorator.*;
-import com.mycontactsapp.contacts.observer.ContactDeletionLogger;
-import com.mycontactsapp.contacts.observer.ContactObserver;
+import com.mycontactsapp.contacts.observer.*;
+import com.mycontactsapp.contacts.search.*;
 import com.mycontactsapp.validation.EmailValidator;
 
 import java.util.*;
@@ -60,8 +59,9 @@ public class Main {
 			System.out.println("7. Undo Last Edit");
 			System.out.println("8. Delete Contact");
 			System.out.println("9. Bulk Operations");
-			System.out.println("10. Logout");
-			System.out.println("11. Exit");
+			System.out.println("10. Search Contacts");
+			System.out.println("11. Logout");
+			System.out.println("12. Exit");
 			System.out.print("Choose option: ");
 
 			int choice = Integer.parseInt(sc.nextLine());
@@ -85,13 +85,15 @@ public class Main {
 			case 8 -> deleteContact(contacts, sc, observers);
 			
 			case 9 -> bulkOperations(contacts, sc);
+			
+			case 10 -> searchContacts(contacts, sc);
 
-			case 10 -> {
+			case 11 -> {
 				session.logout();
 				System.out.println("Logged out successfully.");
 			}
 
-			case 11 -> {
+			case 12 -> {
 				System.out.println("Exiting application...");
 				return;
 			}
@@ -447,5 +449,45 @@ public class Main {
 
 	        default -> System.out.println("Invalid option.");
 	    }
+	}
+	
+	private static void searchContacts(List<Contact> contacts, Scanner sc){
+
+	    if(contacts.isEmpty()){
+	        System.out.println("No contacts available.");
+	        return;
+	    }
+
+	    System.out.println("\nSearch By");
+	    System.out.println("1 Name");
+	    System.out.println("2 Phone");
+	    System.out.println("3 Email");
+
+	    int choice = Integer.parseInt(sc.nextLine());
+
+	    System.out.println("Enter search keyword:");
+	    String keyword = sc.nextLine();
+
+	    ContactSpecification spec;
+
+	    switch(choice){
+
+	        case 1 -> spec = new NameSpecification(keyword);
+
+	        case 2 -> spec = new PhoneSpecification(keyword);
+
+	        case 3 -> spec = new EmailSpecification(keyword);
+
+	        default -> {
+	            System.out.println("Invalid option.");
+	            return;
+	        }
+	    }
+
+	    System.out.println("\nSearch Results:\n");
+
+	    contacts.stream()
+	            .filter(spec::isSatisfied)
+	            .forEach(Contact::display);
 	}
 }
