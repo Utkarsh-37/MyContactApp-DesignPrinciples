@@ -1,6 +1,6 @@
 package com.mycontactsapp.contacts;
 
-import java.util.List;
+import java.util.*;
 
 public class OrganizationContact extends Contact {
 
@@ -11,6 +11,16 @@ public class OrganizationContact extends Contact {
 
         super(name, phones, emails);
         this.organizationName = organizationName;
+    }
+    
+    @Override
+    public Contact copy() {
+        return new OrganizationContact(
+                this.name,
+                this.organizationName,
+                new ArrayList<>(this.phones),
+                new ArrayList<>(this.emails)
+        );
     }
 
     @Override

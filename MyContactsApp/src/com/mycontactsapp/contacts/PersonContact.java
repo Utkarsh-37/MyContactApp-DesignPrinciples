@@ -1,11 +1,20 @@
 package com.mycontactsapp.contacts;
 
-import java.util.List;
+import java.util.*;
 
 public class PersonContact extends Contact {
 
     public PersonContact(String name, List<String> phones, List<String> emails) {
         super(name, phones, emails);
+    }
+    
+    @Override
+    public Contact copy() {
+        return new PersonContact(
+                this.name,
+                new ArrayList<>(this.phones),
+                new ArrayList<>(this.emails)
+        );
     }
 
     @Override

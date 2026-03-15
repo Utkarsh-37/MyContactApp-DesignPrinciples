@@ -15,4 +15,9 @@ public class MaskEmailDecorator extends ContactDecorator {
 
         return text.replaceAll("(.{2}).+(@.+)", "$1***$2");
     }
+
+	@Override
+	public Contact copy() {
+		return null;
+	}
 }

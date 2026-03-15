@@ -1,12 +1,12 @@
 /*
-// - Use Case-5: View Contact Details
-// - User views complete information of a specific contact.
-// 
-// - Use specific user's UUID or #(the serial number/ index) to access the specific details
-/// 
-// - @author Developer
-// - @version 5.0
-//
+ // - Use Case-6: Edit Contact
+ // - User modifies existing contact information.
+ //
+ // - Logged-in user selects a contact (by UUID or index) and updates name, phone, or email.
+ // - Validation is applied via setters; changes are saved by replacing the original with the edited copy.
+ // 
+ // - @author Developer
+ // - @version 6.0
 */
 package com.mycontactsapp;
 
@@ -22,6 +22,8 @@ import com.mycontactsapp.profile.command.*;
 import com.mycontactsapp.profile.service.*;
 
 import com.mycontactsapp.contacts.*;
+import com.mycontactsapp.contacts.command.CommandManager;
+import com.mycontactsapp.contacts.command.EditContactCommand;
 import com.mycontactsapp.contacts.decorator.*;
 
 import com.mycontactsapp.validation.EmailValidator;
@@ -32,54 +34,62 @@ public class Main {
 
 	public static void main(String[] args) {
 
-		Scanner sc = new Scanner(System.in);
+	    Scanner sc = new Scanner(System.in);
 
-		UserRepository repository = new UserRepository();
-		RegistrationService regService = new RegistrationService(repository);
+	    UserRepository repository = new UserRepository();
+	    RegistrationService regService = new RegistrationService(repository);
 
-		SessionManager session = SessionManager.getInstance();
+	    SessionManager session = SessionManager.getInstance();
 
-		List<Contact> contacts = new ArrayList<>();
+	    List<Contact> contacts = new ArrayList<>();
 
-		while (true) {
+	    CommandManager commandManager = new CommandManager();
 
-			System.out.println("\n===== MyContacts App =====");
-			System.out.println("1. Register");
-			System.out.println("2. Login");
-			System.out.println("3. Manage Profile");
-			System.out.println("4. Create Contact");
-			System.out.println("5. View Contact");
-			System.out.println("6. Logout");
-			System.out.println("7. Exit");
-			System.out.print("Choose option: ");
+	    while (true) {
 
-			int choice = Integer.parseInt(sc.nextLine());
+	        System.out.println("\n===== MyContacts App =====");
+	        System.out.println("1. Register");
+	        System.out.println("2. Login");
+	        System.out.println("3. Manage Profile");
+	        System.out.println("4. Create Contact");
+	        System.out.println("5. View Contact");
+	        System.out.println("6. Edit Contact");
+	        System.out.println("7. Undo Last Edit");
+	        System.out.println("8. Logout");
+	        System.out.println("9. Exit");
+	        System.out.print("Choose option: ");
 
-			switch (choice) {
+	        int choice = Integer.parseInt(sc.nextLine());
 
-			case 1 -> register(sc, regService);
+	        switch (choice) {
 
-			case 2 -> login(sc, repository, session);
+	            case 1 -> register(sc, regService);
 
-			case 3 -> manageProfile(sc, session);
+	            case 2 -> login(sc, repository, session);
 
-			case 4 -> contacts.add(createContact(sc));
+	            case 3 -> manageProfile(sc, session);
 
-			case 5 -> viewContacts(contacts, sc);
+	            case 4 -> contacts.add(createContact(sc));
 
-			case 6 -> {
-				session.logout();
-				System.out.println("Logged out successfully.");
-			}
+	            case 5 -> viewContacts(contacts, sc);
 
-			case 7 -> {
-				System.out.println("Exiting application...");
-				return;
-			}
+	            case 6 -> editContact(contacts, sc, commandManager);
+	            
+	            case 7 -> commandManager.undo();
 
-			default -> System.out.println("Invalid option.");
-			}
-		}
+	            case 8 -> {
+	                session.logout();
+	                System.out.println("Logged out successfully.");
+	            }
+
+	            case 9 -> {
+	                System.out.println("Exiting application...");
+	                return;
+	            }
+
+	            default -> System.out.println("Invalid option.");
+	        }
+	    }
 	}
 	private static void register(Scanner sc, RegistrationService regService){
 
@@ -283,5 +293,44 @@ public class Main {
 
 		System.out.println("\nContact Details:\n");
 		System.out.println(contact);
+	}
+
+	private static void editContact(List<Contact> contacts,Scanner sc,CommandManager manager){
+
+		if(contacts.isEmpty()){
+			System.out.println("No contacts available.");
+			return;
+		}
+
+		System.out.println("\nSelect Contact:");
+
+		for(int i=0;i<contacts.size();i++){
+			System.out.println((i+1)+". "+contacts.get(i).getName());
+		}
+
+		int index = Integer.parseInt(sc.nextLine())-1;
+
+		if(index<0 || index>=contacts.size()){
+			System.out.println("Invalid contact.");
+			return;
+		}
+
+		Contact contact = contacts.get(index);
+
+		System.out.println("Enter new name:");
+		String name = sc.nextLine();
+
+		System.out.println("Enter new phone:");
+		List<String> phones = List.of(sc.nextLine());
+
+		System.out.println("Enter new email:");
+		List<String> emails = List.of(sc.nextLine());
+
+		EditContactCommand command =
+				new EditContactCommand(contact,name,phones,emails);
+
+		manager.executeCommand(command);
+
+		System.out.println("Contact updated.");
 	}
 }

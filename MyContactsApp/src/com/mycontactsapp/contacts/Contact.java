@@ -1,8 +1,7 @@
 package com.mycontactsapp.contacts;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public abstract class Contact {
 
@@ -38,6 +37,30 @@ public abstract class Contact {
 
     public abstract void display();
     
+    public Contact(Contact other){
+        this.id = other.id;
+        this.name = other.name;
+        this.phones = new ArrayList<>(other.phones);
+        this.emails = new ArrayList<>(other.emails);
+        this.createdAt = other.createdAt;
+    }
+
+    public void setName(String name){
+
+        if(name == null || name.isBlank())
+            throw new IllegalArgumentException("Name cannot be empty");
+
+        this.name = name;
+    }
+
+    public void setPhones(List<String> phones){
+        this.phones = new ArrayList<>(phones);
+    }
+
+    public void setEmails(List<String> emails){
+        this.emails = new ArrayList<>(emails);
+    }
+    
     @Override
     public String toString() {
 
@@ -50,4 +73,6 @@ public abstract class Contact {
                 createdAt
         );
     }
+    
+    public abstract Contact copy();
 }
