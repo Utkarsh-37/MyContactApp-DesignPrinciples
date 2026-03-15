@@ -1,12 +1,11 @@
 /*
- // - Use Case-6: Edit Contact
- // - User modifies existing contact information.
+ // - Use Case-7: Delete Contact
+ // - User removes a contact from their list with confirmation using UUID.
  //
- // - Logged-in user selects a contact (by UUID or index) and updates name, phone, or email.
- // - Validation is applied via setters; changes are saved by replacing the original with the edited copy.
+ // - Implements simple hard delete with confirmation; updates the in-memory list immediately.
  // 
  // - @author Developer
- // - @version 6.0
+ // - @version 7.0
 */
 package com.mycontactsapp;
 
@@ -25,7 +24,8 @@ import com.mycontactsapp.contacts.*;
 import com.mycontactsapp.contacts.command.CommandManager;
 import com.mycontactsapp.contacts.command.EditContactCommand;
 import com.mycontactsapp.contacts.decorator.*;
-
+import com.mycontactsapp.contacts.observer.ContactDeletionLogger;
+import com.mycontactsapp.contacts.observer.ContactObserver;
 import com.mycontactsapp.validation.EmailValidator;
 
 import java.util.*;
@@ -34,62 +34,68 @@ public class Main {
 
 	public static void main(String[] args) {
 
-	    Scanner sc = new Scanner(System.in);
+		Scanner sc = new Scanner(System.in);
 
-	    UserRepository repository = new UserRepository();
-	    RegistrationService regService = new RegistrationService(repository);
+		UserRepository repository = new UserRepository();
+		RegistrationService regService = new RegistrationService(repository);
 
-	    SessionManager session = SessionManager.getInstance();
+		SessionManager session = SessionManager.getInstance();
 
-	    List<Contact> contacts = new ArrayList<>();
+		List<Contact> contacts = new ArrayList<>();
 
-	    CommandManager commandManager = new CommandManager();
+		CommandManager commandManager = new CommandManager();
+		
+		List<ContactObserver> observers = new ArrayList<>();
+		observers.add(new ContactDeletionLogger());
 
-	    while (true) {
+		while (true) {
 
-	        System.out.println("\n===== MyContacts App =====");
-	        System.out.println("1. Register");
-	        System.out.println("2. Login");
-	        System.out.println("3. Manage Profile");
-	        System.out.println("4. Create Contact");
-	        System.out.println("5. View Contact");
-	        System.out.println("6. Edit Contact");
-	        System.out.println("7. Undo Last Edit");
-	        System.out.println("8. Logout");
-	        System.out.println("9. Exit");
-	        System.out.print("Choose option: ");
+			System.out.println("\n===== MyContacts App =====");
+			System.out.println("1. Register");
+			System.out.println("2. Login");
+			System.out.println("3. Manage Profile");
+			System.out.println("4. Create Contact");
+			System.out.println("5. View Contact");
+			System.out.println("6. Edit Contact");
+			System.out.println("7. Undo Last Edit");
+			System.out.println("8. Delete Contact");
+			System.out.println("9. Logout");
+			System.out.println("10. Exit");
+			System.out.print("Choose option: ");
 
-	        int choice = Integer.parseInt(sc.nextLine());
+			int choice = Integer.parseInt(sc.nextLine());
 
-	        switch (choice) {
+			switch (choice) {
 
-	            case 1 -> register(sc, regService);
+			case 1 -> register(sc, regService);
 
-	            case 2 -> login(sc, repository, session);
+			case 2 -> login(sc, repository, session);
 
-	            case 3 -> manageProfile(sc, session);
+			case 3 -> manageProfile(sc, session);
 
-	            case 4 -> contacts.add(createContact(sc));
+			case 4 -> contacts.add(createContact(sc));
 
-	            case 5 -> viewContacts(contacts, sc);
+			case 5 -> viewContacts(contacts, sc);
 
-	            case 6 -> editContact(contacts, sc, commandManager);
-	            
-	            case 7 -> commandManager.undo();
+			case 6 -> editContact(contacts, sc, commandManager);
 
-	            case 8 -> {
-	                session.logout();
-	                System.out.println("Logged out successfully.");
-	            }
+			case 7 -> commandManager.undo();
+			
+			case 8 -> deleteContact(contacts, sc, observers);
 
-	            case 9 -> {
-	                System.out.println("Exiting application...");
-	                return;
-	            }
+			case 9 -> {
+				session.logout();
+				System.out.println("Logged out successfully.");
+			}
 
-	            default -> System.out.println("Invalid option.");
-	        }
-	    }
+			case 10 -> {
+				System.out.println("Exiting application...");
+				return;
+			}
+
+			default -> System.out.println("Invalid option.");
+			}
+		}
 	}
 	private static void register(Scanner sc, RegistrationService regService){
 
@@ -332,5 +338,62 @@ public class Main {
 		manager.executeCommand(command);
 
 		System.out.println("Contact updated.");
+	}
+	private static void deleteContact(List<Contact> contacts,
+			Scanner sc,
+			List<ContactObserver> observers){
+
+		if(contacts.isEmpty()){
+			System.out.println("No contacts available.");
+			return;
+		}
+
+		System.out.println("\nSelect Contact to Delete:");
+
+		for(int i=0;i<contacts.size();i++){
+			System.out.println((i+1)+". "+contacts.get(i).getName());
+		}
+
+		int index = Integer.parseInt(sc.nextLine())-1;
+
+		if(index<0 || index>=contacts.size()){
+			System.out.println("Invalid contact.");
+			return;
+		}
+
+		Contact contact = contacts.get(index);
+
+		System.out.println("Delete Type:");
+		System.out.println("1 Soft Delete");
+		System.out.println("2 Hard Delete");
+
+		int type = Integer.parseInt(sc.nextLine());
+
+		System.out.println("Are you sure? (yes/no)");
+		String confirm = sc.nextLine();
+
+		if(!confirm.equalsIgnoreCase("yes")){
+			System.out.println("Deletion cancelled.");
+			return;
+		}
+
+		try{
+
+			if(type == 1){
+				contact.softDelete();
+			} else {
+				contact.hardDelete();
+				contacts.remove(contact);
+			}
+
+			for(ContactObserver observer : observers){
+				observer.onContactDeleted(contact);
+			}
+
+			System.out.println("Contact deleted successfully.");
+
+		} catch(Exception e){
+			System.out.println("Error deleting contact.");
+		}
 	}
 }

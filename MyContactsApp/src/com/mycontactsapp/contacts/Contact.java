@@ -75,4 +75,19 @@ public abstract class Contact {
     }
     
     public abstract Contact copy();
+    
+    private boolean deleted = false;
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void softDelete() {
+        this.deleted = true;
+    }
+
+    public void hardDelete() {
+        phones.clear();
+        emails.clear();
+    }
 }
