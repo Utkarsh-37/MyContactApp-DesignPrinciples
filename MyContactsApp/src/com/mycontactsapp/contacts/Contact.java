@@ -3,6 +3,8 @@ package com.mycontactsapp.contacts;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import com.mycontactsapp.contacts.tag.Tag;
+
 public abstract class Contact {
 
     protected UUID id;
@@ -65,11 +67,12 @@ public abstract class Contact {
     public String toString() {
 
         return String.format(
-                "ID: %s\nName: %s\nPhones: %s\nEmails: %s\nCreated: %s",
+                "ID: %s\nName: %s\nPhones: %s\nEmails: %s\nTags: %s\nCreated: %s",
                 id,
                 name,
                 phones,
                 emails,
+                tags,
                 createdAt
         );
     }
@@ -89,5 +92,14 @@ public abstract class Contact {
     public void hardDelete() {
         phones.clear();
         emails.clear();
+    }
+    
+    private Set<Tag> tags = new HashSet<>();
+    public void addTag(Tag tag){
+        tags.add(tag);
+    }
+
+    public Set<Tag> getTags(){
+        return tags;
     }
 }

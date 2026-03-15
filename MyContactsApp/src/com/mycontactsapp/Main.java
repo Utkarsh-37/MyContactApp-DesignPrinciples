@@ -1,11 +1,11 @@
 /*
- // - Use Case-10: Advanced Filtering
- // - User applies multiple filters (by tag, date added, frequently contacted).
+ // - Use Case-11: Create and Manage Tags
+ // - User creates custom tags (Family, Work, Friends) for organizing contacts.
  //
- // - Implements filter based on frequently views by using a counter on the view profile function.
+ // - Implements Creating, viewing and deleting from a central list of tags.
  // 
  // - @author Developer
- // - @version 10.0
+ // - @version 11.0
 */
 package com.mycontactsapp;
 
@@ -26,6 +26,7 @@ import com.mycontactsapp.contacts.decorator.*;
 import com.mycontactsapp.contacts.filter.*;
 import com.mycontactsapp.contacts.observer.*;
 import com.mycontactsapp.contacts.search.*;
+import com.mycontactsapp.contacts.tag.*;
 import com.mycontactsapp.validation.EmailValidator;
 
 import java.util.*;
@@ -62,8 +63,9 @@ public class Main {
 			System.out.println("9. Bulk Operations");
 			System.out.println("10. Search Contacts");
 			System.out.println("11. Advance Filter");
-			System.out.println("12. Logout");
-			System.out.println("13. Exit");
+			System.out.println("12. Manage Tags");
+			System.out.println("13. Logout");
+			System.out.println("14. Exit");
 			System.out.print("Choose option: ");
 
 			int choice = Integer.parseInt(sc.nextLine());
@@ -91,13 +93,15 @@ public class Main {
 			case 10 -> searchContacts(contacts, sc);
 			
 			case 11 -> advancedFilter(contacts, sc);
+			
+			case 12 -> manageTags(contacts, sc);
 
-			case 12 -> {
+			case 13 -> {
 				session.logout();
 				System.out.println("Logged out successfully.");
 			}
 
-			case 13 -> {
+			case 14 -> {
 				System.out.println("Exiting application...");
 				return;
 			}
@@ -516,5 +520,37 @@ public class Main {
 	            .filter(filter::apply)
 	            .sorted(Comparator.comparing(Contact::getName))
 	            .forEach(Contact::display);
+	}
+	
+	private static void manageTags(List<Contact> contacts, Scanner sc){
+
+	    if(contacts.isEmpty()){
+	        System.out.println("No contacts available.");
+	        return;
+	    }
+
+	    System.out.println("\nSelect Contact:");
+
+	    for(int i=0;i<contacts.size();i++){
+	        System.out.println((i+1)+". "+contacts.get(i).getName());
+	    }
+
+	    int index = Integer.parseInt(sc.nextLine()) - 1;
+
+	    if(index < 0 || index >= contacts.size()){
+	        System.out.println("Invalid contact.");
+	        return;
+	    }
+
+	    Contact contact = contacts.get(index);
+
+	    System.out.println("Enter tag name:");
+	    String tagName = sc.nextLine();
+
+	    Tag tag = TagFactory.getTag(tagName);
+
+	    contact.addTag(tag);
+
+	    System.out.println("Tag added successfully.");
 	}
 }
