@@ -3,7 +3,7 @@ package com.mycontactsapp.contacts;
 import java.time.LocalDateTime;
 import java.util.*;
 
-import com.mycontactsapp.contacts.tag.Tag;
+import com.mycontactsapp.contacts.tag.*;
 
 public abstract class Contact {
 
@@ -13,14 +13,41 @@ public abstract class Contact {
     protected List<String> emails;
     protected LocalDateTime createdAt;
 
+    private boolean deleted = false;
+
+    private Set<Tag> tags = new HashSet<>();
+
+    private List<TagObserver> observers = new ArrayList<>();
+
+
+    // Constructor
     public Contact(String name, List<String> phones, List<String> emails) {
         this.id = UUID.randomUUID();
         this.name = name;
-        this.phones = phones;
-        this.emails = emails;
+        this.phones = new ArrayList<>(phones);
+        this.emails = new ArrayList<>(emails);
         this.createdAt = LocalDateTime.now();
     }
 
+
+    // Copy constructor (for Memento / Undo)
+    public Contact(Contact other){
+        this.id = other.id;
+        this.name = other.name;
+        this.phones = new ArrayList<>(other.phones);
+        this.emails = new ArrayList<>(other.emails);
+        this.tags = new HashSet<>(other.tags);
+        this.createdAt = other.createdAt;
+    }
+
+
+    // Abstract methods
+    public abstract void display();
+
+    public abstract Contact copy();
+
+
+    // Getters
     public UUID getId() {
         return id;
     }
@@ -37,16 +64,12 @@ public abstract class Contact {
         return emails;
     }
 
-    public abstract void display();
-    
-    public Contact(Contact other){
-        this.id = other.id;
-        this.name = other.name;
-        this.phones = new ArrayList<>(other.phones);
-        this.emails = new ArrayList<>(other.emails);
-        this.createdAt = other.createdAt;
+    public Set<Tag> getTags(){
+        return tags;
     }
 
+
+    // Setters with validation
     public void setName(String name){
 
         if(name == null || name.isBlank())
@@ -62,24 +85,37 @@ public abstract class Contact {
     public void setEmails(List<String> emails){
         this.emails = new ArrayList<>(emails);
     }
-    
-    @Override
-    public String toString() {
 
-        return String.format(
-                "ID: %s\nName: %s\nPhones: %s\nEmails: %s\nTags: %s\nCreated: %s",
-                id,
-                name,
-                phones,
-                emails,
-                tags,
-                createdAt
-        );
+
+    // Tag management (UC11 + UC12)
+
+    public void addTag(Tag tag){
+
+        if(tags.add(tag)){
+            notifyObservers(tag);
+        }
     }
-    
-    public abstract Contact copy();
-    
-    private boolean deleted = false;
+
+    public void removeTag(Tag tag){
+        tags.remove(tag);
+    }
+
+
+    // Observer methods (UC12)
+
+    public void addObserver(TagObserver observer){
+        observers.add(observer);
+    }
+
+    private void notifyObservers(Tag tag){
+
+        for(TagObserver observer : observers){
+            observer.onTagChanged(this, tag);
+        }
+    }
+
+
+    // Lifecycle management (UC7)
 
     public boolean isDeleted() {
         return deleted;
@@ -92,14 +128,25 @@ public abstract class Contact {
     public void hardDelete() {
         phones.clear();
         emails.clear();
-    }
-    
-    private Set<Tag> tags = new HashSet<>();
-    public void addTag(Tag tag){
-        tags.add(tag);
+        tags.clear();
     }
 
-    public Set<Tag> getTags(){
-        return tags;
+
+    // Display formatting (UC5)
+
+    @Override
+    public String toString() {
+
+        String tagText = tags.isEmpty() ? "None" : tags.toString();
+
+        return String.format(
+                "ID: %s\nName: %s\nPhones: %s\nEmails: %s\nTags: %s\nCreated: %s",
+                id,
+                name,
+                phones,
+                emails,
+                tagText,
+                createdAt
+        );
     }
 }

@@ -1,16 +1,13 @@
 /*
- // - Use Case-11: Create and Manage Tags
- // - User creates custom tags (Family, Work, Friends) for organizing contacts.
- //
- // - Implements Creating, viewing and deleting from a central list of tags.
+ // - Use Case-12: Apply Tags to Contacts
+ // - User assigns one or multiple tags to contacts.
  // 
  // - @author Developer
- // - @version 11.0
+ // - @version 12.0
 */
 package com.mycontactsapp;
 
-import com.mycontactsapp.user.UserBuilder;
-import com.mycontactsapp.user.UserRepository;
+import com.mycontactsapp.user.*;
 import com.mycontactsapp.user.model.User;
 import com.mycontactsapp.user.service.RegistrationService;
 
@@ -27,530 +24,374 @@ import com.mycontactsapp.contacts.filter.*;
 import com.mycontactsapp.contacts.observer.*;
 import com.mycontactsapp.contacts.search.*;
 import com.mycontactsapp.contacts.tag.*;
+
 import com.mycontactsapp.validation.EmailValidator;
 
 import java.util.*;
 
 public class Main {
 
-	public static void main(String[] args) {
+    private static final Scanner sc = new Scanner(System.in);
 
-		Scanner sc = new Scanner(System.in);
+    private static final UserRepository repository = new UserRepository();
+    private static final RegistrationService regService = new RegistrationService(repository);
 
-		UserRepository repository = new UserRepository();
-		RegistrationService regService = new RegistrationService(repository);
+    private static final SessionManager session = SessionManager.getInstance();
 
-		SessionManager session = SessionManager.getInstance();
+    private static final List<Contact> contacts = new ArrayList<>();
 
-		List<Contact> contacts = new ArrayList<>();
+    private static final CommandManager commandManager = new CommandManager();
 
-		CommandManager commandManager = new CommandManager();
-		
-		List<ContactObserver> observers = new ArrayList<>();
-		observers.add(new ContactDeletionLogger());
+    private static final List<ContactObserver> deleteObservers =
+            List.of(new ContactDeletionLogger());
 
-		while (true) {
+    private static final TagObserver tagObserver = new TagChangeLogger();
 
-			System.out.println("\n===== MyContacts App =====");
-			System.out.println("1. Register");
-			System.out.println("2. Login");
-			System.out.println("3. Manage Profile");
-			System.out.println("4. Create Contact");
-			System.out.println("5. View Contact");
-			System.out.println("6. Edit Contact");
-			System.out.println("7. Undo Last Edit");
-			System.out.println("8. Delete Contact");
-			System.out.println("9. Bulk Operations");
-			System.out.println("10. Search Contacts");
-			System.out.println("11. Advance Filter");
-			System.out.println("12. Manage Tags");
-			System.out.println("13. Logout");
-			System.out.println("14. Exit");
-			System.out.print("Choose option: ");
 
-			int choice = Integer.parseInt(sc.nextLine());
+    public static void main(String[] args) {
 
-			switch (choice) {
+        while (true) {
 
-			case 1 -> register(sc, regService);
+            printMenu();
 
-			case 2 -> login(sc, repository, session);
+            int choice = Integer.parseInt(sc.nextLine());
 
-			case 3 -> manageProfile(sc, session);
+            switch (choice) {
 
-			case 4 -> contacts.add(createContact(sc));
+                case 1 -> register();
+                case 2 -> login();
+                case 3 -> manageProfile();
+                case 4 -> createContact();
+                case 5 -> viewContacts();
+                case 6 -> editContact();
+                case 7 -> commandManager.undo();
+                case 8 -> deleteContact();
+                case 9 -> bulkOperations();
+                case 10 -> searchContacts();
+                case 11 -> advancedFilter();
+                case 12 -> manageTags();
+                case 13 -> logout();
+                case 14 -> exit();
 
-			case 5 -> viewContacts(contacts, sc);
+                default -> System.out.println("Invalid option.");
+            }
+        }
+    }
 
-			case 6 -> editContact(contacts, sc, commandManager);
+    private static void printMenu() {
 
-			case 7 -> commandManager.undo();
-			
-			case 8 -> deleteContact(contacts, sc, observers);
-			
-			case 9 -> bulkOperations(contacts, sc);
-			
-			case 10 -> searchContacts(contacts, sc);
-			
-			case 11 -> advancedFilter(contacts, sc);
-			
-			case 12 -> manageTags(contacts, sc);
+        System.out.println("\n===== MyContacts App =====");
+        System.out.println("1. Register");
+        System.out.println("2. Login");
+        System.out.println("3. Manage Profile");
+        System.out.println("4. Create Contact");
+        System.out.println("5. View Contact");
+        System.out.println("6. Edit Contact");
+        System.out.println("7. Undo Last Edit");
+        System.out.println("8. Delete Contact");
+        System.out.println("9. Bulk Operations");
+        System.out.println("10. Search Contacts");
+        System.out.println("11. Advanced Filter");
+        System.out.println("12. Manage Tags");
+        System.out.println("13. Logout");
+        System.out.println("14. Exit");
+        System.out.print("Choose option: ");
+    }
 
-			case 13 -> {
-				session.logout();
-				System.out.println("Logged out successfully.");
-			}
+    private static void register() {
 
-			case 14 -> {
-				System.out.println("Exiting application...");
-				return;
-			}
+        try {
 
-			default -> System.out.println("Invalid option.");
-			}
-		}
-	}
-	private static void register(Scanner sc, RegistrationService regService){
+            System.out.println("Enter Name:");
+            String name = sc.nextLine();
 
-		try {
+            System.out.println("Enter Email:");
+            String email = sc.nextLine();
 
-			System.out.println("\nEnter Name:");
-			String name = sc.nextLine();
+            if (!EmailValidator.isValid(email)) {
+                System.out.println("Invalid email format.");
+                return;
+            }
 
-			System.out.println("Enter Email:");
-			String email = sc.nextLine();
+            System.out.println("Enter Password:");
+            String password = sc.nextLine();
 
-			if(!EmailValidator.isValid(email)){
-				System.out.println("Invalid email format.");
-				return;
-			}
+            System.out.println("User Type (free/premium):");
+            String type = sc.nextLine();
 
-			System.out.println("Enter Password:");
-			String password = sc.nextLine();
+            User user = new UserBuilder()
+                    .setName(name)
+                    .setEmail(email)
+                    .setPassword(password)
+                    .setType(type)
+                    .build();
 
-			System.out.println("User Type (free/premium):");
-			String type = sc.nextLine();
+            regService.register(user);
 
-			User user = new UserBuilder()
-					.setName(name)
-					.setEmail(email)
-					.setPassword(password)
-					.setType(type)
-					.build();
+            System.out.println("User Registered Successfully!");
+            System.out.println(user);
 
-			regService.register(user);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
-			System.out.println("\nUser Registered Successfully!");
-			System.out.println(user);
+    private static void login() {
 
-		} catch(Exception e){
-			System.out.println(e.getMessage());
-		}
-	}
+        System.out.println("1 Basic Authentication");
+        System.out.println("2 OAuth Login");
 
+        int method = Integer.parseInt(sc.nextLine());
 
-	private static void login(Scanner sc, UserRepository repository, SessionManager session){
+        AuthenticationStrategy strategy =
+                method == 2 ? new OAuthStrategy() : new BasicAuthStrategy();
 
-		System.out.println("\nChoose Authentication Method");
-		System.out.println("1. Basic Authentication");
-		System.out.println("2. OAuth Login");
+        AuthenticationService authService =
+                new AuthenticationService(strategy, repository);
 
-		int method = Integer.parseInt(sc.nextLine());
+        System.out.println("Enter Email:");
+        String email = sc.nextLine();
 
-		AuthenticationStrategy strategy;
+        String password = "";
 
-		if(method == 2)
-			strategy = new OAuthStrategy();
-		else
-			strategy = new BasicAuthStrategy();
+        if (method == 1) {
+            System.out.println("Enter Password:");
+            password = sc.nextLine();
+        }
 
-		AuthenticationService authService =
-				new AuthenticationService(strategy, repository);
+        Optional<User> user = authService.login(email, password);
 
-		System.out.println("Enter Email:");
-		String email = sc.nextLine();
+        user.ifPresentOrElse(
+                u -> {
+                    session.login(u);
+                    System.out.println("Welcome " + u.getName());
+                },
+                () -> System.out.println("Authentication failed.")
+        );
+    }
 
-		String password = "";
+    private static void manageProfile() {
 
-		if(method == 1){
-			System.out.println("Enter Password:");
-			password = sc.nextLine();
-		}
+        if (!session.isLoggedIn()) {
+            System.out.println("Please login first.");
+            return;
+        }
 
-		Optional<User> user = authService.login(email, password);
+        User user = session.getCurrentUser();
 
-		if(user.isPresent()){
+        ProfileService service = new ProfileService();
 
-			session.login(user.get());
+        System.out.println("1 Change Name");
+        System.out.println("2 Change Password");
+        System.out.println("3 View Profile");
 
-			System.out.println("\nLogin Successful!");
-			System.out.println("Welcome " + session.getCurrentUser().getName());
+        int choice = Integer.parseInt(sc.nextLine());
 
-		} else {
-			System.out.println("Authentication failed.");
-		}
-	}
-	private static void manageProfile(Scanner sc, SessionManager session){
+        switch (choice) {
 
-		if(!session.isLoggedIn()){
-			System.out.println("Please login first.");
-			return;
-		}
+            case 1 -> {
+                System.out.println("Enter new name:");
+                service.executeCommand(new UpdateNameCommand(user, sc.nextLine()));
+            }
 
-		User user = session.getCurrentUser();
+            case 2 -> {
+                System.out.println("Enter new password:");
+                service.executeCommand(new ChangePasswordCommand(user, sc.nextLine()));
+            }
 
-		ProfileService service = new ProfileService();
+            case 3 -> System.out.println(user);
+        }
+    }
 
-		System.out.println("\nProfile Menu");
-		System.out.println("1. Change Name");
-		System.out.println("2. Change Password");
-		System.out.println("3. View Profile");
+    private static void createContact() {
 
-		int choice = Integer.parseInt(sc.nextLine());
+        System.out.println("Contact Type (person/organization):");
+        String type = sc.nextLine();
 
-		switch(choice){
+        System.out.println("Name:");
+        String name = sc.nextLine();
 
-		case 1:
+        String orgName = null;
 
-			System.out.println("Enter new name:");
-			String newName = sc.nextLine();
+        if (type.equalsIgnoreCase("organization")) {
+            System.out.println("Organization Name:");
+            orgName = sc.nextLine();
+        }
 
-			service.executeCommand(
-					new UpdateNameCommand(user,newName)
-					);
+        ContactBuilder builder = new ContactBuilder()
+                .setType(type)
+                .setName(name)
+                .setOrganizationName(orgName);
 
-			System.out.println("Name updated successfully.");
-			break;
+        System.out.println("Phone:");
+        builder.addPhone(sc.nextLine());
 
-		case 2:
+        System.out.println("Email:");
+        builder.addEmail(sc.nextLine());
 
-			System.out.println("Enter new password:");
-			String newPassword = sc.nextLine();
+        Contact contact = builder.build();
+        contact.addObserver(tagObserver);
 
-			service.executeCommand(
-					new ChangePasswordCommand(user,newPassword)
-					);
+        contacts.add(contact);
 
-			System.out.println("Password changed successfully.");
-			break;
+        System.out.println("Contact created.");
+    }
 
-		case 3:
-			System.out.println(user);
-			break;
+    private static Contact selectContact() {
 
-		default:
-			System.out.println("Invalid option.");
-		}
-	}
+        if (contacts.isEmpty()) {
+            System.out.println("No contacts available.");
+            return null;
+        }
 
-	private static Contact createContact(Scanner sc){
+        for (int i = 0; i < contacts.size(); i++)
+            System.out.println((i + 1) + ". " + contacts.get(i).getName());
 
-		System.out.println("\nContact Type (person/organization):");
-		String type = sc.nextLine();
+        int index = Integer.parseInt(sc.nextLine()) - 1;
 
-		System.out.println("Name:");
-		String name = sc.nextLine();
+        if (index < 0 || index >= contacts.size())
+            return null;
 
-		String orgName = null;
+        return contacts.get(index);
+    }
 
-		if(type.equalsIgnoreCase("organization")){
-			System.out.println("Organization Name:");
-			orgName = sc.nextLine();
-		}
+    private static void viewContacts() {
 
-		ContactBuilder builder = new ContactBuilder()
-				.setType(type)
-				.setName(name)
-				.setOrganizationName(orgName);
+        Contact contact = selectContact();
+        if (contact == null) return;
 
-		System.out.println("Enter phone:");
-		builder.addPhone(sc.nextLine());
+        System.out.println("1 Normal");
+        System.out.println("2 Mask Email");
 
-		System.out.println("Enter email:");
-		builder.addEmail(sc.nextLine());
+        int option = Integer.parseInt(sc.nextLine());
 
-		Contact contact = builder.build();
+        if (option == 2)
+            contact = new MaskEmailDecorator(contact);
 
-		System.out.println("\nContact Created:");
-		contact.display();
+        System.out.println(contact);
+    }
 
-		return contact;
-	}
+    private static void editContact() {
 
-	private static void viewContacts(List<Contact> contacts, Scanner sc){
+        Contact contact = selectContact();
+        if (contact == null) return;
 
-		if(contacts.isEmpty()){
-			System.out.println("No contacts available.");
-			return;
-		}
+        System.out.println("New Name:");
+        String name = sc.nextLine();
 
-		System.out.println("\nYour Contacts:");
+        System.out.println("New Phone:");
+        List<String> phones = List.of(sc.nextLine());
 
-		for(int i = 0; i < contacts.size(); i++){
-			System.out.println((i+1) + ". " + contacts.get(i).getName());
-		}
+        System.out.println("New Email:");
+        List<String> emails = List.of(sc.nextLine());
 
-		System.out.println("Select contact number:");
-		int index = Integer.parseInt(sc.nextLine()) - 1;
+        commandManager.executeCommand(
+                new EditContactCommand(contact, name, phones, emails));
+    }
 
-		if(index < 0 || index >= contacts.size()){
-			System.out.println("Invalid contact.");
-			return;
-		}
+    private static void deleteContact() {
 
-		Contact contact = contacts.get(index);
+        Contact contact = selectContact();
+        if (contact == null) return;
 
-		System.out.println("\nView Format");
-		System.out.println("1. Normal");
-		System.out.println("2. Mask Email");
+        System.out.println("1 Soft Delete");
+        System.out.println("2 Hard Delete");
 
-		int option = Integer.parseInt(sc.nextLine());
+        int type = Integer.parseInt(sc.nextLine());
 
-		if(option == 2){
-			contact = new MaskEmailDecorator(contact);
-		}
+        if (type == 1)
+            contact.softDelete();
+        else
+            contacts.remove(contact);
 
-		System.out.println("\nContact Details:\n");
-		System.out.println(contact);
-	}
+        deleteObservers.forEach(o -> o.onContactDeleted(contact));
+    }
 
-	private static void editContact(List<Contact> contacts,Scanner sc,CommandManager manager){
+    private static void bulkOperations() {
 
-		if(contacts.isEmpty()){
-			System.out.println("No contacts available.");
-			return;
-		}
+        System.out.println("Delete contacts starting with letter:");
+        String letter = sc.nextLine();
 
-		System.out.println("\nSelect Contact:");
+        contacts.removeIf(c -> c.getName().startsWith(letter));
+    }
 
-		for(int i=0;i<contacts.size();i++){
-			System.out.println((i+1)+". "+contacts.get(i).getName());
-		}
+    private static void searchContacts() {
 
-		int index = Integer.parseInt(sc.nextLine())-1;
+        System.out.println("1 Name");
+        System.out.println("2 Phone");
+        System.out.println("3 Email");
 
-		if(index<0 || index>=contacts.size()){
-			System.out.println("Invalid contact.");
-			return;
-		}
+        int choice = Integer.parseInt(sc.nextLine());
 
-		Contact contact = contacts.get(index);
+        System.out.println("Keyword:");
+        String keyword = sc.nextLine();
 
-		System.out.println("Enter new name:");
-		String name = sc.nextLine();
+        ContactSpecification spec =
+                switch (choice) {
+                    case 1 -> new NameSpecification(keyword);
+                    case 2 -> new PhoneSpecification(keyword);
+                    case 3 -> new EmailSpecification(keyword);
+                    default -> null;
+                };
 
-		System.out.println("Enter new phone:");
-		List<String> phones = List.of(sc.nextLine());
+        if (spec == null) return;
 
-		System.out.println("Enter new email:");
-		List<String> emails = List.of(sc.nextLine());
+        contacts.stream()
+                .filter(spec::isSatisfied)
+                .forEach(Contact::display);
+    }
 
-		EditContactCommand command =
-				new EditContactCommand(contact,name,phones,emails);
+    private static void advancedFilter() {
 
-		manager.executeCommand(command);
+        CompositeFilter filter = new CompositeFilter();
 
-		System.out.println("Contact updated.");
-	}
-	private static void deleteContact(List<Contact> contacts,
-			Scanner sc,
-			List<ContactObserver> observers){
+        System.out.println("Filter by name? (y/n)");
 
-		if(contacts.isEmpty()){
-			System.out.println("No contacts available.");
-			return;
-		}
+        if (sc.nextLine().equalsIgnoreCase("y"))
+            filter.addFilter(new NameFilter(sc.nextLine()));
 
-		System.out.println("\nSelect Contact to Delete:");
+        contacts.stream()
+                .filter(filter::apply)
+                .sorted(Comparator.comparing(Contact::getName))
+                .forEach(Contact::display);
+    }
 
-		for(int i=0;i<contacts.size();i++){
-			System.out.println((i+1)+". "+contacts.get(i).getName());
-		}
+    private static void manageTags() {
 
-		int index = Integer.parseInt(sc.nextLine())-1;
+        Contact contact = selectContact();
+        if (contact == null) return;
 
-		if(index<0 || index>=contacts.size()){
-			System.out.println("Invalid contact.");
-			return;
-		}
+        System.out.println("1 Add Tags");
+        System.out.println("2 Remove Tag");
 
-		Contact contact = contacts.get(index);
+        int option = Integer.parseInt(sc.nextLine());
 
-		System.out.println("Delete Type:");
-		System.out.println("1 Soft Delete");
-		System.out.println("2 Hard Delete");
+        if (option == 1) {
 
-		int type = Integer.parseInt(sc.nextLine());
+            System.out.println("Tags (comma separated):");
 
-		System.out.println("Are you sure? (yes/no)");
-		String confirm = sc.nextLine();
+            String[] names = sc.nextLine().split(",");
 
-		if(!confirm.equalsIgnoreCase("yes")){
-			System.out.println("Deletion cancelled.");
-			return;
-		}
+            for (String name : names)
+                contact.addTag(TagFactory.getTag(name.trim()));
 
-		try{
+        } else {
 
-			if(type == 1){
-				contact.softDelete();
-			} else {
-				contact.hardDelete();
-				contacts.remove(contact);
-			}
+            System.out.println("Current tags: " + contact.getTags());
 
-			for(ContactObserver observer : observers){
-				observer.onContactDeleted(contact);
-			}
+            Tag tag = TagFactory.getTag(sc.nextLine());
 
-			System.out.println("Contact deleted successfully.");
+            contact.removeTag(tag);
+        }
+    }
 
-		} catch(Exception e){
-			System.out.println("Error deleting contact.");
-		}
-	}
-	
-	private static void bulkOperations(List<Contact> contacts, Scanner sc){
+    private static void logout() {
+        session.logout();
+        System.out.println("Logged out.");
+    }
 
-	    if(contacts.isEmpty()){
-	        System.out.println("No contacts available.");
-	        return;
-	    }
-
-	    System.out.println("\nBulk Operation Menu");
-	    System.out.println("1 Delete contacts starting with letter");
-	    System.out.println("2 Export contacts");
-	    System.out.println("3 Tag contacts");
-
-	    int choice = Integer.parseInt(sc.nextLine());
-
-	    switch(choice){
-
-	        case 1 -> {
-
-	            System.out.println("Enter starting letter:");
-	            String letter = sc.nextLine();
-
-	            contacts.removeIf(c -> c.getName().startsWith(letter));
-
-	            System.out.println("Contacts deleted.");
-	        }
-
-	        case 2 -> {
-
-	            System.out.println("Exporting contacts...");
-
-	            contacts.stream()
-	                    .map(Contact::getName)
-	                    .forEach(System.out::println);
-	        }
-
-	        case 3 -> {
-
-	            System.out.println("Enter tag:");
-	            String tag = sc.nextLine();
-
-	            contacts.forEach(c ->
-	                    System.out.println(c.getName()+" tagged as "+tag)
-	            );
-	        }
-
-	        default -> System.out.println("Invalid option.");
-	    }
-	}
-	
-	private static void searchContacts(List<Contact> contacts, Scanner sc){
-
-	    if(contacts.isEmpty()){
-	        System.out.println("No contacts available.");
-	        return;
-	    }
-
-	    System.out.println("\nSearch By");
-	    System.out.println("1 Name");
-	    System.out.println("2 Phone");
-	    System.out.println("3 Email");
-
-	    int choice = Integer.parseInt(sc.nextLine());
-
-	    System.out.println("Enter search keyword:");
-	    String keyword = sc.nextLine();
-
-	    ContactSpecification spec;
-
-	    switch(choice){
-
-	        case 1 -> spec = new NameSpecification(keyword);
-
-	        case 2 -> spec = new PhoneSpecification(keyword);
-
-	        case 3 -> spec = new EmailSpecification(keyword);
-
-	        default -> {
-	            System.out.println("Invalid option.");
-	            return;
-	        }
-	    }
-
-	    System.out.println("\nSearch Results:\n");
-
-	    contacts.stream()
-	            .filter(spec::isSatisfied)
-	            .forEach(Contact::display);
-	}
-	
-	private static void advancedFilter(List<Contact> contacts, Scanner sc){
-
-	    if(contacts.isEmpty()){
-	        System.out.println("No contacts available.");
-	        return;
-	    }
-
-	    CompositeFilter filter = new CompositeFilter();
-
-	    System.out.println("Filter by name? (y/n)");
-	    if(sc.nextLine().equalsIgnoreCase("y")){
-	        System.out.println("Enter name keyword:");
-	        filter.addFilter(new NameFilter(sc.nextLine()));
-	    }
-
-	    System.out.println("\nFiltered Results:");
-
-	    contacts.stream()
-	            .filter(filter::apply)
-	            .sorted(Comparator.comparing(Contact::getName))
-	            .forEach(Contact::display);
-	}
-	
-	private static void manageTags(List<Contact> contacts, Scanner sc){
-
-	    if(contacts.isEmpty()){
-	        System.out.println("No contacts available.");
-	        return;
-	    }
-
-	    System.out.println("\nSelect Contact:");
-
-	    for(int i=0;i<contacts.size();i++){
-	        System.out.println((i+1)+". "+contacts.get(i).getName());
-	    }
-
-	    int index = Integer.parseInt(sc.nextLine()) - 1;
-
-	    if(index < 0 || index >= contacts.size()){
-	        System.out.println("Invalid contact.");
-	        return;
-	    }
-
-	    Contact contact = contacts.get(index);
-
-	    System.out.println("Enter tag name:");
-	    String tagName = sc.nextLine();
-
-	    Tag tag = TagFactory.getTag(tagName);
-
-	    contact.addTag(tag);
-
-	    System.out.println("Tag added successfully.");
-	}
+    private static void exit() {
+        System.out.println("Exiting application...");
+        System.exit(0);
+    }
 }
