@@ -1,11 +1,11 @@
 /*
- // - Use Case-7: Delete Contact
- // - User removes a contact from their list with confirmation using UUID.
+ // - Use Case-8: Bulk Operations
+ // - User performs operations on multiple contacts (delete, tag, export).
  //
- // - Implements simple hard delete with confirmation; updates the in-memory list immediately.
+ // - Implements bulk operations; updates the in-memory list immediately.
  // 
  // - @author Developer
- // - @version 7.0
+ // - @version 8.0
 */
 package com.mycontactsapp;
 
@@ -59,8 +59,9 @@ public class Main {
 			System.out.println("6. Edit Contact");
 			System.out.println("7. Undo Last Edit");
 			System.out.println("8. Delete Contact");
-			System.out.println("9. Logout");
-			System.out.println("10. Exit");
+			System.out.println("9. Bulk Operations");
+			System.out.println("10. Logout");
+			System.out.println("11. Exit");
 			System.out.print("Choose option: ");
 
 			int choice = Integer.parseInt(sc.nextLine());
@@ -82,13 +83,15 @@ public class Main {
 			case 7 -> commandManager.undo();
 			
 			case 8 -> deleteContact(contacts, sc, observers);
+			
+			case 9 -> bulkOperations(contacts, sc);
 
-			case 9 -> {
+			case 10 -> {
 				session.logout();
 				System.out.println("Logged out successfully.");
 			}
 
-			case 10 -> {
+			case 11 -> {
 				System.out.println("Exiting application...");
 				return;
 			}
@@ -395,5 +398,54 @@ public class Main {
 		} catch(Exception e){
 			System.out.println("Error deleting contact.");
 		}
+	}
+	
+	private static void bulkOperations(List<Contact> contacts, Scanner sc){
+
+	    if(contacts.isEmpty()){
+	        System.out.println("No contacts available.");
+	        return;
+	    }
+
+	    System.out.println("\nBulk Operation Menu");
+	    System.out.println("1 Delete contacts starting with letter");
+	    System.out.println("2 Export contacts");
+	    System.out.println("3 Tag contacts");
+
+	    int choice = Integer.parseInt(sc.nextLine());
+
+	    switch(choice){
+
+	        case 1 -> {
+
+	            System.out.println("Enter starting letter:");
+	            String letter = sc.nextLine();
+
+	            contacts.removeIf(c -> c.getName().startsWith(letter));
+
+	            System.out.println("Contacts deleted.");
+	        }
+
+	        case 2 -> {
+
+	            System.out.println("Exporting contacts...");
+
+	            contacts.stream()
+	                    .map(Contact::getName)
+	                    .forEach(System.out::println);
+	        }
+
+	        case 3 -> {
+
+	            System.out.println("Enter tag:");
+	            String tag = sc.nextLine();
+
+	            contacts.forEach(c ->
+	                    System.out.println(c.getName()+" tagged as "+tag)
+	            );
+	        }
+
+	        default -> System.out.println("Invalid option.");
+	    }
 	}
 }
